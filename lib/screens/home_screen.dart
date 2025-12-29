@@ -7,49 +7,55 @@ class HomeScreen extends StatelessWidget {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  void logout() async {
+  Future<Map<String, dynamic>?> getCurrentUserData() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (!doc.exists) return null;
+
+    return doc.data();
+  }
+
+  void logout(BuildContext context) async {
     await _auth.signOut();
+    // AuthWrapper will automatically redirect
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = _auth.currentUser;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Home"),
-        actions: [IconButton(icon: const Icon(Icons.logout), onPressed: logout)],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => logout(context),
+          )
+        ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').orderBy('createdAt', descending: true).snapshots(),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: getCurrentUserData(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const Center(child: Text("No users registered yet."));
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          final users = snapshot.data!.docs;
+          if (!snapshot.hasData || snapshot.data == null) {
+            return const Center(child: Text("No user data found"));
+          }
 
-          return ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              final isCurrentUser = currentUser?.uid == user.id;
-
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: isCurrentUser ? Colors.blue.shade50 : Colors.white,
-                elevation: 2,
-                child: ListTile(
-                  leading: CircleAvatar(child: Text(user['name']?[0].toUpperCase() ?? '?')),
-                  title: Text(user['name'] ?? 'No Name', style: TextStyle(fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.normal)),
-                  subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text("Email: ${user['email']}"),
-                    Text("Phone: ${user['phone'] ?? 'N/A'}"),
-                    Text("Role: ${user['role'] ?? 'N/A'}"),
-                  ]),
-                  isThreeLine: true,
-                ),
-              );
-            },
+          final userData = snapshot.data!;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("Name: ${userData['name']}"),
+                Text("Email: ${userData['email']}"),
+                Text("Phone: ${userData['phone']}"),
+                Text("Role: ${userData['role']}"),
+              ],
+            ),
           );
         },
       ),
