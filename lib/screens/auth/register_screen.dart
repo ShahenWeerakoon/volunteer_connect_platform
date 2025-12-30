@@ -1,8 +1,8 @@
 // import 'package:flutter/material.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
+// // import '../../common/home_screen.dart';
 // import '../common/home_screen.dart';
-// // import 'common/home_screen.dart'; // Import your HomeScreen
+// import '../../services/firestore_service.dart';
 //
 // class RegisterScreen extends StatefulWidget {
 //   const RegisterScreen({super.key});
@@ -19,6 +19,8 @@
 //   final FirebaseAuth _auth = FirebaseAuth.instance;
 //   String? _role;
 //   bool loading = false;
+//
+//   final FirestoreService _firestoreService = FirestoreService();
 //
 //   Future<void> register() async {
 //     if (_role == null) {
@@ -38,25 +40,27 @@
 //       );
 //       User? user = userCredential.user;
 //
-//       // Save extra info in Firestore
-//       await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
-//         'name': nameController.text.trim(),
-//         'email': emailController.text.trim(),
-//         'phone': phoneController.text.trim(),
-//         'role': _role,
-//         'createdAt': FieldValue.serverTimestamp(),
-//       });
+//       if (user != null) {
+//         // Save extra info in Firestore using FirestoreService
+//         await _firestoreService.saveUserProfile(
+//           uid: user.uid,
+//           email: emailController.text.trim(),
+//           name: nameController.text.trim(),
+//           phone: phoneController.text.trim(),
+//           role: _role!,
+//         );
 //
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(content: Text("Account created successfully")),
-//       );
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(content: Text("Account created successfully")),
+//         );
 //
-//       // Navigate to HomeScreen and clear navigation stack
-//       Navigator.pushAndRemoveUntil(
-//         context,
-//         MaterialPageRoute(builder: (context) => HomeScreen()),
-//             (route) => false, // Remove all previous routes
-//       );
+//         // Navigate to HomeScreen and clear navigation stack
+//         Navigator.pushAndRemoveUntil(
+//           context,
+//           MaterialPageRoute(builder: (context) => HomeScreen()),
+//               (route) => false,
+//         );
+//       }
 //     } on FirebaseAuthException catch (e) {
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(content: Text(e.message ?? "Registration failed")),
@@ -75,13 +79,28 @@
 //         child: SingleChildScrollView(
 //           child: Column(
 //             children: [
-//               TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name")),
+//               TextField(
+//                 controller: nameController,
+//                 decoration: const InputDecoration(labelText: "Full Name"),
+//               ),
 //               const SizedBox(height: 12),
-//               TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email"), keyboardType: TextInputType.emailAddress),
+//               TextField(
+//                 controller: emailController,
+//                 decoration: const InputDecoration(labelText: "Email"),
+//                 keyboardType: TextInputType.emailAddress,
+//               ),
 //               const SizedBox(height: 12),
-//               TextField(controller: passwordController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
+//               TextField(
+//                 controller: passwordController,
+//                 decoration: const InputDecoration(labelText: "Password"),
+//                 obscureText: true,
+//               ),
 //               const SizedBox(height: 12),
-//               TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone Number"), keyboardType: TextInputType.phone),
+//               TextField(
+//                 controller: phoneController,
+//                 decoration: const InputDecoration(labelText: "Phone Number"),
+//                 keyboardType: TextInputType.phone,
+//               ),
 //               const SizedBox(height: 16),
 //               DropdownButtonFormField<String>(
 //                 value: _role,
@@ -110,11 +129,10 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import '../../common/home_screen.dart';
-import '../common/home_screen.dart';
+import '../common/home_screen.dart'; // Keep this for now, AuthWrapper will handle navigation
+import '../../widgets/auth_wrapper.dart'; // Import AuthWrapper
 import '../../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -146,7 +164,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => loading = true);
 
     try {
-      // Create user in Firebase Auth
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -154,7 +171,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       User? user = userCredential.user;
 
       if (user != null) {
-        // Save extra info in Firestore using FirestoreService
         await _firestoreService.saveUserProfile(
           uid: user.uid,
           email: emailController.text.trim(),
@@ -167,10 +183,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SnackBar(content: Text("Account created successfully")),
         );
 
-        // Navigate to HomeScreen and clear navigation stack
+        // Navigate to AuthWrapper instead of HomeScreen
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => const AuthWrapper()),
               (route) => false,
         );
       }
