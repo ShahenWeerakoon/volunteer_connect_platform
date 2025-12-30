@@ -53,4 +53,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'volunteer-connect-1c099.firebasestorage.app',
     iosBundleId: 'com.example.volunteerConnectPlatform',
   );
+
 }
