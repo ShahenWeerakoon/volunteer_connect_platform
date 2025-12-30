@@ -1,6 +1,8 @@
 // import 'package:flutter/material.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:cloud_firestore/cloud_firestore.dart';
+// import '../common/home_screen.dart';
+// // import 'common/home_screen.dart'; // Import your HomeScreen
 //
 // class RegisterScreen extends StatefulWidget {
 //   const RegisterScreen({super.key});
@@ -48,7 +50,13 @@
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         const SnackBar(content: Text("Account created successfully")),
 //       );
-//       // AuthWrapper will navigate automatically
+//
+//       // Navigate to HomeScreen and clear navigation stack
+//       Navigator.pushAndRemoveUntil(
+//         context,
+//         MaterialPageRoute(builder: (context) => HomeScreen()),
+//             (route) => false, // Remove all previous routes
+//       );
 //     } on FirebaseAuthException catch (e) {
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(content: Text(e.message ?? "Registration failed")),
@@ -89,7 +97,10 @@
 //                   ? const CircularProgressIndicator()
 //                   : SizedBox(
 //                 width: double.infinity,
-//                 child: ElevatedButton(onPressed: register, child: const Text("Register")),
+//                 child: ElevatedButton(
+//                   onPressed: register,
+//                   child: const Text("Register"),
+//                 ),
 //               ),
 //             ],
 //           ),
@@ -98,13 +109,13 @@
 //     );
 //   }
 // }
-//
-//
+
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'home_screen.dart'; // Import your HomeScreen
+// import '../../common/home_screen.dart';
+import '../common/home_screen.dart';
+import '../../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -121,6 +132,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _role;
   bool loading = false;
+
+  final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> register() async {
     if (_role == null) {
@@ -140,25 +153,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       User? user = userCredential.user;
 
-      // Save extra info in Firestore
-      await FirebaseFirestore.instance.collection('users').doc(user!.uid).set({
-        'name': nameController.text.trim(),
-        'email': emailController.text.trim(),
-        'phone': phoneController.text.trim(),
-        'role': _role,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      if (user != null) {
+        // Save extra info in Firestore using FirestoreService
+        await _firestoreService.saveUserProfile(
+          uid: user.uid,
+          email: emailController.text.trim(),
+          name: nameController.text.trim(),
+          phone: phoneController.text.trim(),
+          role: _role!,
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created successfully")),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Account created successfully")),
+        );
 
-      // Navigate to HomeScreen and clear navigation stack
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-            (route) => false, // Remove all previous routes
-      );
+        // Navigate to HomeScreen and clear navigation stack
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+              (route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? "Registration failed")),
@@ -177,13 +192,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Full Name")),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Full Name"),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email"), keyboardType: TextInputType.emailAddress),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: "Email"),
+                keyboardType: TextInputType.emailAddress,
+              ),
               const SizedBox(height: 12),
-              TextField(controller: passwordController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
+              TextField(
+                controller: passwordController,
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+              ),
               const SizedBox(height: 12),
-              TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone Number"), keyboardType: TextInputType.phone),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(labelText: "Phone Number"),
+                keyboardType: TextInputType.phone,
+              ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _role,
