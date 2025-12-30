@@ -37,6 +37,7 @@ class FirestoreService {
   // USER PROFILE
   // ===============================
 
+  /// Save or update a user profile
   Future<void> saveUserProfile({
     required String uid,
     required String email,
@@ -53,6 +54,7 @@ class FirestoreService {
     });
   }
 
+  /// Get user profile by UID
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     final doc = await _db.collection('users').doc(uid).get();
     if (!doc.exists) return null;
@@ -63,12 +65,14 @@ class FirestoreService {
   // EVENTS (for Organizer)
   // ===============================
 
+  /// Create a new event
   Future<void> createEvent({
     required String title,
     required String description,
     required String location,
     required DateTime date,
     required String organizerId,
+    required String organizerName,
   }) async {
     await _db.collection('events').add({
       'title': title,
@@ -76,10 +80,12 @@ class FirestoreService {
       'location': location,
       'date': Timestamp.fromDate(date),
       'organizerId': organizerId,
+      'organizerName': organizerName,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
 
+  /// Get all events, ordered by creation time
   Stream<QuerySnapshot> getAllEvents() {
     return _db
         .collection('events')
@@ -91,6 +97,7 @@ class FirestoreService {
   // EVENT REGISTRATION (Volunteer)
   // ===============================
 
+  /// Register a volunteer for an event
   Future<void> registerForEvent({
     required String eventId,
     required String userId,
@@ -103,6 +110,7 @@ class FirestoreService {
     });
   }
 
+  /// Get all registrations of a specific user
   Stream<QuerySnapshot> getUserRegistrations(String userId) {
     return _db
         .collection('registrations')
@@ -110,3 +118,4 @@ class FirestoreService {
         .snapshots();
   }
 }
+
