@@ -80,9 +80,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
 import 'add_event_screen.dart';
-import 'EventRegistrationsScreen.dart'; // Make sure this exists
+import 'volunteers_list_screen.dart'; // Make sure this exists
 
 class OrganizerHome extends StatelessWidget {
   OrganizerHome({super.key});
@@ -93,14 +94,12 @@ class OrganizerHome extends StatelessWidget {
   Future<Map<String, dynamic>?> getCurrentUserData() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-
     final userData = await _firestoreService.getUserData(user.uid);
     return userData;
   }
 
   void logout(BuildContext context) async {
     await _auth.signOut();
-    // AuthWrapper will automatically redirect
   }
 
   @override
@@ -112,7 +111,7 @@ class OrganizerHome extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => logout(context),
-          )
+          ),
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
@@ -127,6 +126,8 @@ class OrganizerHome extends StatelessWidget {
           }
 
           final userData = snapshot.data!;
+          final organizerId = _auth.currentUser!.uid;
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -143,7 +144,7 @@ class OrganizerHome extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => AddEventScreen(
-                          organizerId: _auth.currentUser!.uid,
+                          organizerId: organizerId,
                           organizerName: userData['name'],
                         ),
                       ),
@@ -151,6 +152,58 @@ class OrganizerHome extends StatelessWidget {
                   },
                   child: const Text("Add New Event"),
                 ),
+                const SizedBox(height: 20),
+                const Text("Your Events:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                // List of events created by this organizer
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _firestoreService.getAllEvents(),
+                    builder: (context, eventSnapshot) {
+                      if (!eventSnapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      // Filter events by this organizer
+                      final events = eventSnapshot.data!.docs
+                          .where((doc) => doc['organizerId'] == organizerId)
+                          .toList();
+
+                      if (events.isEmpty) {
+                        return const Center(child: Text("No events created yet"));
+                      }
+
+                      return ListView.builder(
+                        itemCount: events.length,
+                        itemBuilder: (context, index) {
+                          final event = events[index].data() as Map<String, dynamic>;
+                          final eventId = events[index].id;
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              title: Text(event['title'] ?? 'No Title'),
+                              subtitle: Text(event['description'] ?? ''),
+                              trailing: ElevatedButton(
+                                child: const Text("View Volunteers"),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => VolunteersListScreen(
+                                        eventId: eventId,
+                                        eventTitle: event['title'] ?? 'No Title',
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
 
                 const SizedBox(height: 12),
 
