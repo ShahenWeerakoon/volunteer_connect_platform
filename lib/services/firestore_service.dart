@@ -8,7 +8,6 @@
 // //   // USER PROFILE
 // //   // ===============================
 // //
-// //   /// Save or update a user profile
 // //   Future<void> saveUserProfile({
 // //     required String uid,
 // //     required String email,
@@ -25,7 +24,6 @@
 // //     });
 // //   }
 // //
-// //   /// Get user profile by UID
 // //   Future<Map<String, dynamic>?> getUserData(String uid) async {
 // //     final doc = await _db.collection('users').doc(uid).get();
 // //     if (!doc.exists) return null;
@@ -36,7 +34,6 @@
 // //   // EVENTS (for Organizer)
 // //   // ===============================
 // //
-// //   /// Create a new event
 // //   Future<void> createEvent({
 // //     required String title,
 // //     required String description,
@@ -56,7 +53,6 @@
 // //     });
 // //   }
 // //
-// //   /// Get all events, ordered by creation time
 // //   Stream<QuerySnapshot> getAllEvents() {
 // //     return _db
 // //         .collection('events')
@@ -79,6 +75,8 @@
 // //     await _db.collection('registrations').add({
 // //       'eventId': eventId,
 // //       'userId': userId,
+// //       'name': name,                   // store name
+// //       'email': email,                 // store email
 // //       'status': 'joined',
 // //       'phone': phone,
 // //       'emergencyContact': emergencyContact,
@@ -87,7 +85,6 @@
 // //     });
 // //   }
 // //
-// //   /// Get all registrations of a specific user
 // //   Stream<QuerySnapshot> getUserRegistrations(String userId) {
 // //     return _db
 // //         .collection('registrations')
@@ -316,6 +313,15 @@ class FirestoreService {
     }
     return _db.collection('events')
         .where('clubId', whereIn: clubIds)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  /// Get events for a specific organizer
+  Stream<QuerySnapshot> getEventsByOrganizer(String organizerId) {
+    return _db
+        .collection('events')
+        .where('organizerId', isEqualTo: organizerId)
         .orderBy('createdAt', descending: true)
         .snapshots();
   }

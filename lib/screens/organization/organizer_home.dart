@@ -136,9 +136,10 @@ class OrganizerHome extends StatelessWidget {
                 Text("Name: ${userData['name']}", style: const TextStyle(fontSize: 18)),
                 Text("Email: ${userData['email']}", style: const TextStyle(fontSize: 16)),
                 const SizedBox(height: 20),
+
+                // Add Event button
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to Add Event screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -203,6 +204,22 @@ class OrganizerHome extends StatelessWidget {
                       );
                     },
                   ),
+
+                const SizedBox(height: 12),
+
+                // View Event Registrations button
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EventRegistrationsScreen(
+                          organizerId: _auth.currentUser!.uid,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text("View My Event Registrations"),
                 ),
               ],
             ),
