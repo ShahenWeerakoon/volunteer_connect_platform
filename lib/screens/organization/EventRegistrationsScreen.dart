@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/firestore_service.dart';
-import 'VolunteersListScreen.dart'; // Make sure this exists
+import 'volunteers_list_screen.dart'; // Make sure this exists
 
 class EventRegistrationsScreen extends StatelessWidget {
   final String organizerId; // Currently logged-in organizer
