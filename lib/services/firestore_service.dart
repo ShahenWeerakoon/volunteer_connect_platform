@@ -313,4 +313,22 @@ class FirestoreService {
         .orderBy('createdAt', descending: true)
         .snapshots();
   }
+  // Update event in Firestore
+  Future<void> updateEvent({
+    required String eventId,
+    required String title,
+    required String description,
+    required String location,
+    required DateTime date,
+  }) async {
+    await _db.collection('events').doc(eventId).update({
+      'title': title,
+      'description': description,
+      'location': location,
+      'date': Timestamp.fromDate(date),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
 }
+
