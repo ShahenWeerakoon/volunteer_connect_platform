@@ -330,5 +330,36 @@ class FirestoreService {
     });
   }
 
+  // ===============================
+// CHAT (Organizer ↔ Volunteer)
+// ===============================
+  Future<void> sendChatMessage({
+    required String chatRoomId,
+    required String senderId,
+    required String senderName,
+    required String message,
+  }) async {
+    await _db
+        .collection('chatRooms')
+        .doc(chatRoomId)
+        .collection('messages')
+        .add({
+      'senderId': senderId,
+      'senderName': senderName, // ✅ IMPORTANT
+      'message': message,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<QuerySnapshot> getChatMessages(String chatRoomId) {
+    return _db
+        .collection('chatRooms')
+        .doc(chatRoomId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+
 }
 
