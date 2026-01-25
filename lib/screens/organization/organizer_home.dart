@@ -1951,6 +1951,7 @@ import 'my_events_screen.dart';
 import 'organizer_profile_screen.dart';
 import 'chatroom_screen.dart';
 import 'reports_screen.dart';
+import 'volunteers_list_screen.dart';
 
 class OrganizerHome extends StatefulWidget {
   const OrganizerHome({super.key});
@@ -2223,12 +2224,40 @@ class _OrganizerHomeState extends State<OrganizerHome> {
                     const SizedBox(height: 12),
                     _actionCard(
                       title: "Volunteers",
-                      subtitle: "View and manage volunteers",
+                      subtitle: "View volunteers per event",
                       icon: Icons.groups,
                       iconColor: const Color(0xFFEC4899),
                       iconBg: const Color(0xFFFCE7F3),
-                      onTap: () {
-                        // TODO: Navigate to Volunteers Screen
+                      onTap: () async {
+                        // Fetch organizer's events
+                        final snapshot = await FirebaseFirestore.instance
+                            .collection('events')
+                            .where('organizerId', isEqualTo: organizerId)
+                            .limit(1) // simple for now
+                            .get();
+
+                        if (snapshot.docs.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("No events found"),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final event = snapshot.docs.first;
+                        final data = event.data() as Map<String, dynamic>;
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => VolunteersListScreen(
+                              eventId: event.id,
+                              eventTitle: data['name'] ?? "Event",
+                            ),
+                          ),
+                        );
                       },
                     ),
                     const SizedBox(height: 12),
